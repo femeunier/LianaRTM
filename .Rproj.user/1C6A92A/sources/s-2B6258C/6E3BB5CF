@@ -7,16 +7,16 @@
     "folds" : "",
     "hash" : "0",
     "id" : "6E3BB5CF",
-    "lastKnownWriteTime" : 1615886350,
-    "last_content_update" : 1615886350420,
+    "lastKnownWriteTime" : 1615900885,
+    "last_content_update" : 1615900885908,
     "path" : "/home/femeunier/Documents/projects/LianaRTM/scripts/Example1.R",
     "project_path" : "scripts/Example1.R",
     "properties" : {
-        "cursorPosition" : "0,0",
-        "scrollLine" : "0",
+        "cursorPosition" : "76,0",
+        "scrollLine" : "42",
         "tempName" : "Untitled1"
     },
-    "relative_order" : 1,
+    "relative_order" : 2,
     "source_on_save" : false,
     "source_window" : "",
     "type" : "r_source"
