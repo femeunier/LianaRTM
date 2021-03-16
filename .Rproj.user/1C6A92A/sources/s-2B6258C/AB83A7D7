@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1615835498962.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "AB83A7D7",
+    "lastKnownWriteTime" : 1615886644,
+    "last_content_update" : 1615886644734,
+    "path" : "/home/femeunier/Documents/projects/LianaRTM/scripts/Example0.R",
+    "project_path" : "scripts/Example0.R",
+    "properties" : {
+        "cursorPosition" : "15,44",
+        "scrollLine" : "0",
+        "tempName" : "Untitled3"
+    },
+    "relative_order" : 4,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
