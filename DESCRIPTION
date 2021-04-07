@@ -12,3 +12,5 @@ LazyData: true
 Imports:
   remotes,
   rrtm
+Depends: 
+    R (>= 2.10)
