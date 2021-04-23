@@ -5,9 +5,9 @@ library(rrtm)
 library(dplyr)
 library(ggplot2)
 
-head(Removal.data)
+head(Gigante.data)
 
-Removal.data <- Removal.data %>% mutate(DBH = DBH/10) # mm --> cm
+Removal.data <- Gigante.data %>% mutate(DBH = DBH/10) # mm --> cm
 
 # Timing
 target.season <- "wet"   # dry/wet
@@ -15,10 +15,10 @@ target.year <- 2017
 
 ## PFT parameters
 # Height parameters
-dbh_min = c(Liana = 6.)
+dbh_min = c(Liana = 3.)
 href = c(Liana = 61.7, Tree = 56.5)
-b1Ht = c(Liana = 0.02, Tree = 0.011)
-b2Ht = c(Liana = 2, Tree = 0.64)
+b1Ht = c(Liana = 0.1, Tree = 0.011)
+b2Ht = c(Liana = 0.87, Tree = 0.64)
 Delta_H = 0.5
 
 # LAI parameters
@@ -78,7 +78,24 @@ for (target.plot in sort(unique(Removal.data$plot))){
   #   geom_point(aes(x = DBH,y = lai, color = as.factor(pft))) +
   #   theme_bw()
 
-  Removal.data.select.arranged <- Removal.data.select %>% arrange(H) # Tallest cohort must be last in sw_two_stream
+  # ggplot(data = Removal.data.select) +
+  #   geom_point(aes(x = DBH,y = H,color = as.factor(GF))) +
+  #   theme_bw()
+
+  Removal.data.select.arranged <- Removal.data.select %>% arrange((H)) # Tallest cohort must be last in sw_two_stream
+
+
+  Removal.data.select.arranged.merged <- merge_cohorts(Removal.data.select.arranged %>% mutate(dbh = DBH))
+
+  edr_r_outputs[[target.plot]] <-
+    with(Removal.data.select.arranged.merged,
+         edr_r(pft = pft, lai = lai, wai = wai, cai = cai,
+               N = N, Cab = Cab, Car = Car, Cw = Cw, Cm = Cm,
+               orient_factor = orient_factor,
+               clumping_factor = clumping_factor,
+               soil_moisture = soil_brightness,
+               direct_sky_frac = direct_sky_frac,
+               czen = czen))
 
   df.patch <- bind_rows(list(df.patch,
                              Removal.data.select.arranged %>%
@@ -88,19 +105,6 @@ for (target.plot in sort(unique(Removal.data$plot))){
                                                           .groups = "keep") %>% mutate(plot = target.plot,
                                                                                        Treatment = Removal.data.select[1,] %>% pull(Treatment))))
 
-  # ggplot(data = Removal.data.select) +
-  #   geom_point(aes(x = DBH,y = H,color = as.factor(GF))) +
-  #   theme_bw()
-
-  edr_r_outputs[[target.plot]] <-
-    with(Removal.data.select,
-         edr_r(pft = pft, lai = lai, wai = wai, cai = cai,
-               N = N, Cab = Cab, Car = Car, Cw = Cw, Cm = Cm,
-               orient_factor = orient_factor,
-               clumping_factor = clumping_factor,
-               soil_moisture = soil_brightness,
-               direct_sky_frac = direct_sky_frac,
-               czen = czen))
 
   df.albedo <- bind_rows(list(df.albedo,
                                data.frame(plot = target.plot,
@@ -110,19 +114,24 @@ for (target.plot in sort(unique(Removal.data$plot))){
 }
 
 
-ggplot(data = df.albedo) +
-  geom_line(aes(x = wavelength, y = albedo, color = as.factor(Treatment),group = interaction(plot,Treatment))) +
-  theme_bw()
-
-
 ggplot(data = df.patch) +
   geom_boxplot(aes(x = Treatment, y = lai,fill = GF)) +
   theme_bw()
 
 
+ggplot(data = df.albedo) +
+  geom_line(aes(x = wavelength, y = albedo, color = as.factor(Treatment),group = interaction(plot,Treatment))) +
+  theme_bw()
 
+df.treatment <- df.albedo %>% group_by(Treatment,wavelength) %>% summarise(albedo.m = mean(albedo,na.rm = TRUE),
+                                                                           albedo.sd = sd(albedo,na.rm = TRUE))
 
-
-
+ggplot(data = df.treatment,
+       aes(x = wavelength, y = albedo.m, ymin = albedo.m - albedo.sd, ymax = albedo.m + albedo.sd,
+           color = as.factor(Treatment), fill = as.factor(Treatment))) +
+  geom_ribbon(alpha = 0.5,color = NA) +
+  # scale_x_continuous(limits = c(500,600)) +
+  geom_line() +
+  theme_bw()
 
 

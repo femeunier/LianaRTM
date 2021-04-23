@@ -1,5 +1,5 @@
 library(LianaRTM)
 
-Removal.data <- bind_rows(Liana.data,Tree.data)
+Gigante.data <- bind_rows(Liana.Gigante.data,Tree.Gigante.data)
 
-usethis::use_data(Removal.data, overwrite = TRUE)
+usethis::use_data(Gigante.data, overwrite = TRUE)
