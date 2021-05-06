@@ -3,7 +3,7 @@
 #' @author Félicien Meunier
 #' @export
 
-merge_cohorts <- function(patch){
+merge_cohorts <- function(patch,Niter = 50){
 
   patch_in <- patch
   patch_out <- patch_in[1,]
@@ -12,7 +12,7 @@ merge_cohorts <- function(patch){
   nrow_beg <- nrow(patch_in)
   nrow_end <- nrow(patch_out)
   iter = 1
-  while((nrow_beg != nrow_end) & iter < 50){
+  while((nrow_beg != nrow_end) & iter < Niter){
     for (i in seq(2,nrow_beg)){
       coh1 <- patch_in[i-1,]
       coh2 <- patch_in[i,]

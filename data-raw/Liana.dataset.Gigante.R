@@ -8,8 +8,8 @@ file.liana <- file.path(getwd(),"data","Liana data 210119a.csv")
 data.liana <- read.csv(file.liana,stringsAsFactors = FALSE) %>% mutate(ID = row_number()) %>% rename(Date.0 = Date,
                                                                                                      DBH.0 = DBH)
 
-data.liana.formatted <- data.liana %>% group_by(ID) %>% select(c("plot","ID",starts_with("Date"))) %>%
-  pivot_longer(cols = -c("ID","plot"),
+data.liana.formatted <- data.liana %>% group_by(ID) %>% select(c("plot","ID","cuadrante",starts_with("Date"))) %>%
+  pivot_longer(cols = -c("ID","plot","cuadrante"),
                names_to = "date",
                values_to = "Time") %>% mutate(timing = as.numeric(gsub(".*Date.", "", date))) %>% left_join(data.liana %>% group_by(ID) %>% select(c("ID",starts_with("DBH"))) %>%
                                                                                                               pivot_longer(cols = -c("ID"),

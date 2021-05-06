@@ -4,6 +4,7 @@ library(LianaRTM)
 library(rrtm)
 library(dplyr)
 library(ggplot2)
+library(GeoLight)
 
 head(BCI.data)
 
@@ -62,8 +63,10 @@ Cm = 1/(10*SLA)
 
 # A few global parameters
 soil_brightness <- 0.5   # Hapke model parameter
-czen <- 0.85             # Approximate value for July at UMBS
 direct_sky_frac <- 0.9   # Assume relatively clear sky
+
+s <- solar(as.POSIXct("2011-01-01 12:00:00",tz = "EST"))
+czen <- cos((zenith(s, lon = -79.8, lat = 9.2))*pi/180)
 
 edr_r_outputs <- edr_r_outputs_trees <- list()
 
@@ -82,7 +85,7 @@ for (ipatch in seq(1,length(patches))){
 
 
   BCI.data.patch <- BCI.data %>%
-    filter(patch == target.patch,
+    dplyr::filter(patch == target.patch,
            !is.na(dbh))
 
 
@@ -93,13 +96,6 @@ for (ipatch in seq(1,length(patches))){
            cai = 1,
            pft = case_when(is_liana ~ 1,
                            !is_liana ~ 2))
-
-  # ggplot(data = BCI.data.patch) +
-  #   geom_point(aes(x = dbh,y = lai, color = as.factor(pft))) +
-  #   theme_bw()
-  # ggplot(data = BCI.data.patch) +
-  #   geom_point(aes(x = dbh,y = H,color = as.factor(GF))) +
-  #   theme_bw()
 
   BCI.data.patch.arranged <- BCI.data.patch %>% arrange((H)) # Tallest cohort must be last in sw_two_stream
 
@@ -136,8 +132,8 @@ for (ipatch in seq(1,length(patches))){
                                                                 DBHm = mean(dbh,na.rm = TRUE),
                                                                 BA = sum(pi*(dbh**2)/4)/(Delta_xy*Delta_xy),
 
-                                                                density = nrow(BCI.data.patch.arranged %>% filter(is_liana))/(Delta_xy*Delta_xy),
-                                                                large.density = nrow(BCI.data.patch.arranged %>% filter(is_liana,
+                                                                density = nrow(BCI.data.patch.arranged %>% dplyr::filter(is_liana))/(Delta_xy*Delta_xy),
+                                                                large.density = nrow(BCI.data.patch.arranged %>% dplyr::filter(is_liana,
                                                                                                                         dbh >= dbh_min))/(Delta_xy*Delta_xy),
 
                                                                 albedo = mean(edr_r_outputs[[target.patch]][["albedo"]]),
@@ -160,10 +156,6 @@ for (ipatch in seq(1,length(patches))){
   )
   )
 }
-
-# ggplot(data = df.albedo) +
-#   geom_line(aes(x = wavelength, y = albedo, color = (liana.density),group = interaction(patch))) +
-#   theme_bw()
 
 
 df.patch.all <- df.patch %>% group_by(patch) %>% summarise(lai.tot = sum(lai),
@@ -188,41 +180,58 @@ df.patch.all <- df.patch %>% group_by(patch) %>% summarise(lai.tot = sum(lai),
 
                                                            understorey.light.tree = mean(understorey.light.tree))
 
-ggplot(data = df.patch) +
-  geom_boxplot(aes(x = as.factor(is_liana),y = lai, fill = as.factor(is_liana))) +
+df.LAI <- bind_rows(list(df.patch %>% select(patch,is_liana,lai) %>% mutate(PFT = case_when(is_liana ~ "Liana",
+                                                                                            !is_liana ~ "Tree")) %>% dplyr::select(-c(is_liana)),
+                         df.patch %>% select(patch,lai) %>% group_by(patch) %>% summarise(lai = sum(lai)) %>%
+                                                                                            mutate(PFT = "All")))
+
+ggplot(data = df.LAI) +
+  geom_boxplot(aes(x = as.factor(PFT),y = lai, fill = as.factor(PFT))) +
   theme_bw()
 
 ggplot(data = df.patch.all) +
-  geom_histogram(aes(x = 100*lai.liana/lai.tot)) +
+  geom_density(aes(x = 100*lai.liana/lai.tot)) +
   theme_bw()
 
-ggplot(data = df.patch.all %>% filter(lai.tot >= 3.5),
+ggplot(data = df.LAI) +
+  geom_density(aes(x = lai,fill = PFT),color = NA, alpha = 0.2) +
+  theme_bw()
+
+ggplot(data = df.patch.all %>% dplyr::filter(lai.tot >= 3.5),
        aes(x = lai.liana/lai.tot, y = albedo.greenpeak)) +
   geom_point() +
   theme_bw()
 
-ggplot(data = df.patch.all %>% filter(lai.tot >= 3.5),
-       aes(x = lai.liana, y = (albedo.NIR))) +
-  geom_point() +
+LAI.sep <- 5
+ggplot(mapping = aes(x = lai.liana, y = (albedo.NIR))) +
+  geom_point(data = df.patch.all %>% dplyr::filter(lai.tot >= LAI.sep)) +
+  geom_point(data = df.patch.all %>% dplyr::filter(lai.tot < LAI.sep),shape = 2) +
   theme_bw()
 
-ggplot(data = df.patch.all %>% filter(lai.tot >= 3.5),
-       aes(x = lai.liana, y = albedo.greenpeak - albedo.greenpeak.tree)) +
-  geom_point() +
+ggplot(mapping = aes(x = lai.liana, y = albedo.greenpeak - albedo.greenpeak.tree)) +
+  geom_point(data = df.patch.all %>% dplyr::filter(lai.tot >= LAI.sep)) +
+  geom_point(data = df.patch.all %>% dplyr::filter(lai.tot < LAI.sep),shape = 2) +
   theme_bw()
 
-ggplot(data = df.patch.all %>% filter(lai.tot >= 3.5)) +
-  geom_point(aes(x = lai.liana/lai.tot, y = (albedo.NIR - albedo.NIR.tree)/albedo.NIR.tree)) +
-  theme_bw()
-
-ggplot(data = df.patch.all %>% filter(lai.tot >= 3.5),
-       aes(x = lai.liana, y = understorey.light, color = (lai.liana))) +
-  geom_point() +
-  geom_smooth(method = lm,formula= ((y) ~ (x)), se=TRUE) +
+ggplot(mapping = aes(x = lai.liana/lai.tot, y = (albedo.NIR - albedo.NIR.tree)/albedo.NIR.tree)) +
+  geom_point(data = df.patch.all %>% dplyr::filter(lai.tot >= LAI.sep)) +
+  geom_point(data = df.patch.all %>% dplyr::filter(lai.tot < LAI.sep),shape = 2) +
   theme_bw()
 
 
-ggplot(data = df.patch.all) +
-  geom_point(aes(x = lai.liana,
-                 y = (understorey.light - understorey.light.tree)/understorey.light.tree)) +
+ggplot(mapping = aes(x = lai.liana, y = understorey.light)) +
+  geom_point(data = df.patch.all %>% dplyr::filter(lai.tot >= LAI.sep)) +
+  geom_point(data = df.patch.all %>% dplyr::filter(lai.tot < LAI.sep),shape = 2) +
+  geom_smooth(data = df.patch.all %>% dplyr::filter(lai.tot >= LAI.sep),
+              method = lm,formula= ((y) ~ (x)), se=TRUE) +
   theme_bw()
+
+
+ggplot(mapping = aes(x = lai.liana, y = 100*(understorey.light - understorey.light.tree)/understorey.light.tree)) +
+  geom_point(data = df.patch.all %>% dplyr::filter(lai.tot >= LAI.sep)) +
+  geom_point(data = df.patch.all %>% dplyr::filter(lai.tot < LAI.sep), shape = 2) +
+  scale_y_continuous(limits = c(-100,0)) +
+  theme_bw()
+
+
+
