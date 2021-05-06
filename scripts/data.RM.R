@@ -7,6 +7,7 @@ library(dplyr)
 library(stringr)
 library(hsdar)
 
+
 LianaRemovalPixelReflectanceWV3 <- readRDS("./data/LianaRemovalPixelReflectanceWV3.rds")
 
 all.data <- LianaRemovalPixelReflectanceWV3 %>% pivot_longer(cols = -c("type","plot"),
